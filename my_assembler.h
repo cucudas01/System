@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h> // (문자열 처리를 위한 ctype.h 추가)
+#include <ctype.h>
 
 // 상수 정의
 #define MAX_LINES 5000
@@ -25,8 +25,14 @@ typedef struct token_unit {
     char *operator;         // 명령어 라인 중 operator
     char operand[MAX_OPERAND][20]; // 명령어 라인 중 operand
     char comment[100];      // 명령어 라인 중 comment
-    int is_comment_line;    // 주석 라인 여부 플래그
+    int loc;                // *** [추가] 이 라인의 Location Counter (LOC)
 } token;
+
+// *** [추가] Symbol Table (SYMTAB) 구조체 ***
+typedef struct symtab_entry {
+    char label[10];
+    int loc;
+} symtab;
 
 // 전역 변수 선언
 extern char *input_data[MAX_LINES];     // 원본 소스 코드 라인별 저장
@@ -35,50 +41,40 @@ extern token *token_table[MAX_LINES];
 extern inst *inst_table[MAX_INST];
 extern int inst_index;
 
+// *** SYMTAB 전역 변수 선언 ***
+extern symtab *symtab_table[MAX_INST]; // (편의상 MAX_INST 크기 재사용)
+extern int symtab_index;
+
 // --- 구현 함수 프로토타입 ---
 
-/**
- * @brief inst.data 파일을 읽어 inst_table을 초기화합니다.
- * @param filename inst.data 파일 경로
- */
 void load_inst_table(const char *filename);
-
-/**
- * @brief 입력 SIC 소스 파일을 읽어 input_data와 token_table을 채웁니다.
- * @param filename 입력 SIC 소스 파일 경로
- */
 void load_input_file(const char *filename);
-
-/**
- * @brief 소스 코드 한 라인을 파싱하여 token_table에 저장합니다.
- * @param line_index 현재 라인 번호
- * @param line 원본 라인 문자열
- */
 void parse_line(int line_index, char *line);
-
-/**
- * @brief operator 문자열을 inst_table에서 찾아 해당 inst_unit 포인터를 반환합니다.
- * @param operator_str 찾고자 하는 operator (e.g., "LDA")
- * @return 찾은 inst_unit 포인터, 없으면 NULL
- */
 inst* find_opcode(char *operator_str);
-
-/**
- * @brief 파싱 결과를 명세서 요구사항에 맞게 출력합니다.
- */
 void print_output(void);
-
-/**
- * @brief 동적으로 할당된 모든 메모리를 해제합니다.
- */
 void cleanup(void);
+int get_operand_count_from_type(char *type_str);
+
+// *** Pass 1 및 SYMTAB 함수 프로토타입 ***
 
 /**
- * @brief inst.data의 operand type (e.g., "M", "RR")을 기반으로
- * operand 개수(ops)를 반환합니다.
- * @param type_str "M", "RR", "R", "N", "RN", "-" 등
- * @return operand 개수
+ * @brief token_table을 순회하며 LOC를 계산하고 SYMTAB을 구축합니다. (Pass 1)
  */
-int get_operand_count_from_type(char *type_str);
+void execute_pass1(void);
+
+/**
+ * @brief SYMTAB에 새 심볼(레이블)을 추가합니다.
+ * @param label 추가할 레이블
+ * @param loc 해당 레이블의 메모리 주소(LOC)
+ */
+void add_to_symtab(char *label, int loc);
+
+/**
+ * @brief SYMTAB에서 레이블을 검색합니다.
+ * @param label 검색할 레이블
+ * @return 찾으면 해당 LOC, 못 찾으면 -1
+ */
+int find_in_symtab(char *label);
+
 
 #endif // MY_ASSEMBLER_H
