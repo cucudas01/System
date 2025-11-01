@@ -1,4 +1,3 @@
-
 #ifndef MY_ASSEMBLER_H
 #define MY_ASSEMBLER_H
 
@@ -86,4 +85,3 @@ void cleanup(void);
 int get_operand_count_from_type(char *type_str);
 
 #endif // MY_ASSEMBLER_H
-
